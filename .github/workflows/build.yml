@@ -1,0 +1,41 @@
+name: Build Python to Android APK
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # GitHub Actions 提供的 Linux 环境
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 安装系统依赖
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          python3-pip python3-setuptools python3-dev build-essential \
+          ccache git libncurses5-dev zlib1g-dev libssl-dev \
+          libsqlite3-dev libffi-dev libbz2-dev liblzma-dev \
+          openjdk-17-jdk unzip wget autoconf libtool pkg-config
+
+    - name: 安装 Android SDK 和 NDK
+      uses: android-actions/setup-android@v3
+
+    - name: 安装 Buildozer 和 Python 依赖
+      run: |
+        pip3 install --upgrade pip
+        pip3 install buildozer cython==0.29.36
+
+    - name: 编译构建 APK
+      run: |
+        # 运行 buildozer 会自动下载并配置 p4a 和相应的 Android 工具链
+        yes | buildozer android debug
+
+    - name: 上传打包好的 APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-apk
+        path: bin/*.apk
